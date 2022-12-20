@@ -1,6 +1,6 @@
 [package]
 name = "ethereum_hashing"
-version = "1.0.0"
+version = "1.0.0-beta.0"
 edition = "2021"
 license = "Apache-2.0"
 readme = "README.md"

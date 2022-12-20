@@ -1,4 +1,4 @@
-`etherum_hashing`
+`ethereum_hashing`
 ================
 
 This package contains optimized implementations of hashing functions for Ethereum.

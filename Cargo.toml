@@ -11,13 +11,13 @@ keywords = ["ethereum"]
 categories = ["cryptography::cryptocurrencies"]
 
 [dependencies]
-lazy_static = { version = "1.4.0", optional = true }
-cpufeatures = { version = "0.2.5", optional = true }
-ring = "0.16.20"
-sha2 = "0.10.6"
+lazy_static = { version = "1.1", optional = true }
+cpufeatures = { version = "0.2", optional = true }
+ring = "0.17"
+sha2 = "0.10"
 
 [dev-dependencies]
-rustc-hex = "2.1.0"
+rustc-hex = "2"
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3.33"

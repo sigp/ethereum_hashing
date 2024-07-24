@@ -12,9 +12,11 @@ categories = ["cryptography::cryptocurrencies"]
 
 [dependencies]
 lazy_static = { version = "1.1", optional = true }
-cpufeatures = { version = "0.2", optional = true }
 ring = "0.17"
 sha2 = "0.10"
+
+[target.'cfg(any(target_arch = "x86_64"))'.dependencies]
+cpufeatures = { version = "0.2", optional = true }
 
 [dev-dependencies]
 rustc-hex = "2"

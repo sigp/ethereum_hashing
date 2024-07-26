@@ -2,7 +2,7 @@
 // `cpufeatures` crates which do not compile on some architectures like RISC-V.
 #![cfg(target_arch = "x86_64")]
 
-use crate::{Sha256, Sha256Context};
+use crate::{Sha256, Sha256Context, HASH_LEN};
 use sha2::Digest;
 
 /// Implementation of SHA256 using the `sha2` crate (fastest on x86_64 CPUs with SHA extensions).

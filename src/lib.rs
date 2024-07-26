@@ -15,7 +15,7 @@ pub use self::DynamicContext as Context;
 use sha2_impl::Sha2CrateImpl;
 
 #[cfg(feature = "zero_hash_cache")]
-use lazy_static::lazy_static;
+use std::sync::LazyLock;
 
 /// Length of a SHA256 hash in bytes.
 pub const HASH_LEN: usize = 32;
@@ -193,18 +193,16 @@ impl Sha256Context for DynamicContext {
 pub const ZERO_HASHES_MAX_INDEX: usize = 48;
 
 #[cfg(feature = "zero_hash_cache")]
-lazy_static! {
-    /// Cached zero hashes where `ZERO_HASHES[i]` is the hash of a Merkle tree with 2^i zero leaves.
-    pub static ref ZERO_HASHES: Vec<Vec<u8>> = {
-        let mut hashes = vec![vec![0; 32]; ZERO_HASHES_MAX_INDEX + 1];
+/// Cached zero hashes where `ZERO_HASHES[i]` is the hash of a Merkle tree with 2^i zero leaves.
+pub static ZERO_HASHES: LazyLock<Vec<[u8; HASH_LEN]>> = LazyLock::new(|| {
+    let mut hashes = vec![[0; HASH_LEN]; ZERO_HASHES_MAX_INDEX + 1];
 
-        for i in 0..ZERO_HASHES_MAX_INDEX {
-            hashes[i + 1] = hash32_concat(&hashes[i], &hashes[i])[..].to_vec();
-        }
+    for i in 0..ZERO_HASHES_MAX_INDEX {
+        hashes[i + 1] = hash32_concat(&hashes[i], &hashes[i]);
+    }
 
-        hashes
-    };
-}
+    hashes
+});
 
 #[cfg(test)]
 mod tests {
@@ -231,7 +229,7 @@ mod tests {
 
         #[test]
         fn zero_hash_zero() {
-            assert_eq!(ZERO_HASHES[0], vec![0; 32]);
+            assert_eq!(ZERO_HASHES[0], [0; 32]);
         }
     }
 }

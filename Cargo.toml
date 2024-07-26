@@ -16,7 +16,7 @@ ring = "0.17"
 sha2 = "0.10"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-cpufeatures = { version = "0.2", optional = true }
+cpufeatures = "0.2"
 
 [dev-dependencies]
 rustc-hex = "2"
@@ -25,6 +25,5 @@ rustc-hex = "2"
 wasm-bindgen-test = "0.3.33"
 
 [features]
-default = ["zero_hash_cache", "detect-cpufeatures"]
+default = ["zero_hash_cache"]
 zero_hash_cache = ["lazy_static"]
-detect-cpufeatures = ["cpufeatures"]

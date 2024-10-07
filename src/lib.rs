@@ -6,7 +6,8 @@
 //!
 //! Now this crate serves primarily as a wrapper over two SHA256 crates: `sha2` and `ring` – which
 //! it switches between at runtime based on the availability of SHA intrinsics.
-
+#![allow(stable_features)]
+#![feature(lazy_cell)]
 mod sha2_impl;
 
 pub use self::DynamicContext as Context;

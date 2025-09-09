@@ -12,7 +12,7 @@ categories = ["cryptography::cryptocurrencies"]
 rust-version = "1.80.0"
 
 [dependencies]
-ring = "0.17"
+ring = { version = "0.17", optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2"
@@ -25,5 +25,6 @@ rustc-hex = "2"
 wasm-bindgen-test = "0.3.33"
 
 [features]
-default = ["zero_hash_cache"]
+default = ["zero_hash_cache", "ring"]
 zero_hash_cache = []
+ring = ["dep:ring"]

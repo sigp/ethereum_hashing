@@ -37,7 +37,7 @@ jobs:
     - name: Get latest version of stable Rust
       run: rustup update stable
     - name: Run tests
-      run: cargo test --release --no-default-features --features ${{ matrix.features }}
+      run: cargo test --release --no-default-features --features "${{ matrix.features }}"
   # We use `--skip-clean` to aggregate the coverage from runs with different features.
   coverage:
     runs-on: ubuntu-latest

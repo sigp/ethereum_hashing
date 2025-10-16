@@ -1,6 +1,6 @@
 // This implementation should only be compiled on x86_64 due to its dependency on the `sha2` and
 // `cpufeatures` crates which do not compile on some architectures like RISC-V.
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", feature = "portable"))]
 
 use crate::{Sha256, Sha256Context, HASH_LEN};
 use sha2::Digest;

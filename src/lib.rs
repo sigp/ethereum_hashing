@@ -264,6 +264,17 @@ mod tests {
         assert_eq!(expected, output);
     }
 
+    #[cfg(feature = "portable")]
+    #[test]
+    fn test_portable_hashing() {
+        let input: Vec<u8> = b"hello world".as_ref().into();
+
+        let output = hash(input.as_ref());
+        let expected_hex = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
+        let expected: Vec<u8> = expected_hex.from_hex().unwrap();
+        assert_eq!(expected, output);
+    }
+
     #[cfg(feature = "zero_hash_cache")]
     mod zero_hash {
         use super::*;

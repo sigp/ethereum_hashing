@@ -150,9 +150,15 @@ impl DynamicImpl {
         }
 
         // Compile error if no implementation available
-        #[cfg(all(not(feature = "ring"), not(target_arch = "x86_64"), not(feature = "sha2")))]
+        #[cfg(all(
+            not(feature = "ring"),
+            not(target_arch = "x86_64"),
+            not(feature = "sha2")
+        ))]
         {
-            compile_error!("Either 'ring' or 'sha2' feature must be enabled on non-x86_64 architectures");
+            compile_error!(
+                "Either 'ring' or 'sha2' feature must be enabled on non-x86_64 architectures"
+            );
         }
     }
 }

@@ -99,7 +99,10 @@ mod zero_hash_tests {
     #[test]
     fn test_zero_hashes() {
         assert_eq!(ZERO_HASHES[0], [0; 32]);
-        assert_eq!(ZERO_HASHES[1], hash32_concat(&ZERO_HASHES[0], &ZERO_HASHES[0]));
+        assert_eq!(
+            ZERO_HASHES[1],
+            hash32_concat(&ZERO_HASHES[0], &ZERO_HASHES[0])
+        );
         assert_eq!(ZERO_HASHES.len(), ZERO_HASHES_MAX_INDEX + 1);
     }
 }

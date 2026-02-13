@@ -9,7 +9,7 @@ repository = "https://github.com/sigp/ethereum_hashing"
 documentation = "https://docs.rs/ethereum_hashing"
 keywords = ["ethereum"]
 categories = ["cryptography::cryptocurrencies"]
-rust-version = "1.80.0"
+rust-version = "1.83.0"
 
 [dependencies]
 ring = { version = "0.17", optional = true }
@@ -30,3 +30,6 @@ default = ["zero_hash_cache", "ring"]
 zero_hash_cache = []
 ring = ["dep:ring"]
 sha2 = ["dep:sha2"]
+# Enable ring's WASM support (wasm32-unknown-unknown target).
+# This enables getrandom's js feature for Web API-based randomness.
+ring-wasm = ["ring", "ring/wasm32_unknown_unknown_js"]

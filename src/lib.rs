@@ -7,6 +7,9 @@
 //! Now this crate serves primarily as a wrapper over two SHA256 crates: `sha2` and `ring` – which
 //! it switches between at runtime based on the availability of SHA intrinsics.
 
+#[cfg(test)]
+mod tests;
+
 mod sha2_impl;
 
 pub use self::DynamicContext as Context;
@@ -241,33 +244,3 @@ pub static ZERO_HASHES: LazyLock<Vec<[u8; HASH_LEN]>> = LazyLock::new(|| {
 
     hashes
 });
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rustc_hex::FromHex;
-
-    #[cfg(target_arch = "wasm32")]
-    use wasm_bindgen_test::*;
-
-    #[cfg_attr(not(target_arch = "wasm32"), test)]
-    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
-    fn test_hashing() {
-        let input: Vec<u8> = b"hello world".as_ref().into();
-
-        let output = hash(input.as_ref());
-        let expected_hex = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-        let expected: Vec<u8> = expected_hex.from_hex().unwrap();
-        assert_eq!(expected, output);
-    }
-
-    #[cfg(feature = "zero_hash_cache")]
-    mod zero_hash {
-        use super::*;
-
-        #[test]
-        fn zero_hash_zero() {
-            assert_eq!(ZERO_HASHES[0], [0; 32]);
-        }
-    }
-}

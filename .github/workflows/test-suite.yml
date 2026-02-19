@@ -173,27 +173,27 @@ jobs:
     runs-on: ubuntu-latest
     name: cargo-tarpaulin
     steps:
-      - uses: actions/checkout@v4
-      - name: Get latest version of stable Rust
-        run: rustup update stable
-      - name: Install cargo-tarpaulin
-        uses: taiki-e/install-action@cargo-tarpaulin
-      - name: Check code coverage (sha2 only)
-        run: cargo-tarpaulin --workspace --out xml --no-default-features --features "sha2"
-      - name: Check code coverage (ring only)
-        run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "ring"
-      - name: Check code coverage (sha2 + zero_hash_cache)
-        run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "sha2,zero_hash_cache"
-      - name: Check code coverage (ring + zero_hash_cache)
-        run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "ring,zero_hash_cache"
-      - name: Check code coverage (all features)
-        run: cargo-tarpaulin --workspace --out xml --skip-clean --all-features
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v4
-        with:
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-          informational: true
+    - uses: actions/checkout@v4
+    - name: Get latest version of stable Rust
+      run: rustup update stable
+    - name: Install cargo-tarpaulin
+      uses: taiki-e/install-action@cargo-tarpaulin
+    - name: Check code coverage (sha2 only)
+      run: cargo-tarpaulin --workspace --out xml --no-default-features --features "sha2"
+    - name: Check code coverage (ring only)
+      run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "ring"
+    - name: Check code coverage (sha2 + zero_hash_cache)
+      run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "sha2,zero_hash_cache"
+    - name: Check code coverage (ring + zero_hash_cache)
+      run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "ring,zero_hash_cache"
+    - name: Check code coverage (all features)
+      run: cargo-tarpaulin --workspace --out xml --skip-clean --all-features
+    - name: Upload to codecov.io
+      uses: codecov/codecov-action@v5
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      with:
+        fail_ci_if_error: false
 
   msrv:
     name: msrv-check

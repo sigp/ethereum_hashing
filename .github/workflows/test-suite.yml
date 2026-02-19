@@ -4,57 +4,189 @@ on:
   push:
     branches:
       - main
-      - 'pr/*'
+      - "pr/*"
   pull_request:
+
 env:
   # Deny warnings in CI
   RUSTFLAGS: "-D warnings"
+
 jobs:
   cargo-fmt:
     name: cargo-fmt
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Get latest version of stable Rust
       run: rustup update stable
     - name: Check formatting with cargo fmt
       run: cargo fmt --all -- --check
+
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get latest version of stable Rust
+        run: rustup update stable
+      - name: Run clippy (all features)
+        run: cargo clippy --all-features -- -D warnings
+      - name: Run clippy (sha2 only)
+        run: cargo clippy --no-default-features --features "sha2,zero_hash_cache" -- -D warnings
+      - name: Run clippy (ring only)
+        run: cargo clippy --no-default-features --features "ring,zero_hash_cache" -- -D warnings
+
   test:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        features: ["", "ring", "zero_hash_cache", "ring,zero_hash_cache"]
-        # Skip the ring-less builds on macOS ARM where ring is mandatory.
-        exclude:
-        - os: macos-latest
-          features: ""
-        - os: macos-latest
-          features: "zero_hash_cache"
+        features:
+          - "sha2"
+          - "ring"
+          - "sha2,zero_hash_cache"
+          - "ring,zero_hash_cache"
+          - "sha2,ring,zero_hash_cache"
     runs-on: ${{ matrix.os }}
     name: test-${{ matrix.os }}-feat-${{ matrix.features }}
     steps:
-    - uses: actions/checkout@v3
-    - name: Get latest version of stable Rust
-      run: rustup update stable
-    - name: Run tests
-      run: cargo test --release --no-default-features --features "${{ matrix.features }}"
+      - uses: actions/checkout@v4
+      - name: Get latest version of stable Rust
+        run: rustup update stable
+      - name: Run tests
+        run: cargo test --release --no-default-features --features "${{ matrix.features }}"
+
+  test-wasm:
+    name: test-wasm32-${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: "sha2"
+            features: "sha2"
+          - name: "sha2,zero_hash_cache"
+            features: "sha2,zero_hash_cache"
+          # ring requires ring-wasm for WASM support
+          - name: "ring"
+            features: "ring-wasm"
+          - name: "ring,zero_hash_cache"
+            features: "ring-wasm,zero_hash_cache"
+          - name: "sha2,ring,zero_hash_cache"
+            features: "sha2,ring-wasm,zero_hash_cache"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get latest version of stable Rust
+        run: rustup update stable
+      - name: Install wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Build for WASM
+        run: cargo build --target wasm32-unknown-unknown --no-default-features --features "${{ matrix.features }}"
+      - name: Run WASM tests (Node.js)
+        run: wasm-pack test --node --no-default-features --features "${{ matrix.features }}"
+
+  test-arm64:
+    name: test-aarch64-linux-${{ matrix.features }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        features:
+          - "sha2"
+          - "ring"
+          - "sha2,zero_hash_cache"
+          - "ring,zero_hash_cache"
+          - "sha2,ring,zero_hash_cache"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get latest version of stable Rust
+        run: rustup update stable
+      - name: Install cross
+        uses: taiki-e/install-action@cross
+      - name: Build for ARM64 with cross
+        run: cross build --target aarch64-unknown-linux-gnu --no-default-features --features "${{ matrix.features }}"
+      - name: Run ARM64 tests with cross (QEMU)
+        run: cross test --target aarch64-unknown-linux-gnu --no-default-features --features "${{ matrix.features }}"
+
+  test-arm64-macos:
+    name: test-aarch64-macos-${{ matrix.features }}
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        features:
+          - "sha2"
+          - "ring"
+          - "sha2,zero_hash_cache"
+          - "ring,zero_hash_cache"
+          - "sha2,ring,zero_hash_cache"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get latest version of stable Rust
+        run: rustup update stable
+      - name: Run tests
+        run: cargo test --release --no-default-features --features "${{ matrix.features }}"
+
+  test-armv7:
+    name: test-armv7-linux-${{ matrix.features }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        features:
+          - "sha2"
+          - "ring"
+          - "sha2,zero_hash_cache"
+          - "ring,zero_hash_cache"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get latest version of stable Rust
+        run: rustup update stable
+      - name: Install cross
+        uses: taiki-e/install-action@cross
+      - name: Build for ARMv7 with cross
+        run: cross build --target armv7-unknown-linux-gnueabihf --no-default-features --features "${{ matrix.features }}"
+      - name: Run ARMv7 tests with cross (QEMU)
+        run: cross test --target armv7-unknown-linux-gnueabihf --no-default-features --features "${{ matrix.features }}"
+
+  test-riscv64:
+    name: test-riscv64-linux-${{ matrix.features }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        features:
+          - "sha2"
+          - "ring"
+          - "sha2,zero_hash_cache"
+          - "ring,zero_hash_cache"
+          - "sha2,ring,zero_hash_cache"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get latest version of stable Rust
+        run: rustup update stable
+      - name: Install cross
+        uses: taiki-e/install-action@cross
+      - name: Build for RISC-V 64 with cross
+        run: cross build --target riscv64gc-unknown-linux-gnu --no-default-features --features "${{ matrix.features }}"
+      - name: Run RISC-V 64 tests with cross (QEMU)
+        run: cross test --target riscv64gc-unknown-linux-gnu --no-default-features --features "${{ matrix.features }}"
+
   # We use `--skip-clean` to aggregate the coverage from runs with different features.
   coverage:
     runs-on: ubuntu-latest
     name: cargo-tarpaulin
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Get latest version of stable Rust
       run: rustup update stable
     - name: Install cargo-tarpaulin
       uses: taiki-e/install-action@cargo-tarpaulin
-    - name: Check code coverage with cargo-tarpaulin (no features)
-      run: cargo-tarpaulin --workspace --out xml --no-default-features
-    - name: Check code coverage with cargo-tarpaulin (just `ring` feature)
+    - name: Check code coverage (sha2 only)
+      run: cargo-tarpaulin --workspace --out xml --no-default-features --features "sha2"
+    - name: Check code coverage (ring only)
       run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "ring"
-    - name: Check code coverage with cargo-tarpaulin (just `zero_hash_cache` feature)
-      run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "zero_hash_cache"
-    - name: Check code coverage with cargo-tarpaulin (all features)
+    - name: Check code coverage (sha2 + zero_hash_cache)
+      run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "sha2,zero_hash_cache"
+    - name: Check code coverage (ring + zero_hash_cache)
+      run: cargo-tarpaulin --workspace --out xml --skip-clean --no-default-features --features "ring,zero_hash_cache"
+    - name: Check code coverage (all features)
       run: cargo-tarpaulin --workspace --out xml --skip-clean --all-features
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v5
@@ -62,4 +194,17 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
         fail_ci_if_error: false
-        informational: true
+
+  msrv:
+    name: msrv-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MSRV Rust (1.83.0)
+        run: rustup install 1.83.0 && rustup default 1.83.0
+      - name: Check with MSRV (sha2)
+        run: cargo check --no-default-features --features "sha2,zero_hash_cache"
+      - name: Check with MSRV (ring)
+        run: cargo check --no-default-features --features "ring,zero_hash_cache"
+      - name: Check with MSRV (all features)
+        run: cargo check --all-features

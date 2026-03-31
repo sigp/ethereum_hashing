@@ -14,7 +14,7 @@ mod sha2_impl;
 
 pub use self::DynamicContext as Context;
 
-#[cfg(any(target_arch = "x86_64", feature = "sha2"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
 use sha2_impl::Sha2CrateImpl;
 
 #[cfg(feature = "zero_hash_cache")]
@@ -101,7 +101,7 @@ impl Sha256 for RingImpl {
 
 /// Default dynamic implementation that switches between available implementations.
 pub enum DynamicImpl {
-    #[cfg(any(target_arch = "x86_64", feature = "sha2"))]
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
     Sha2,
     #[cfg(feature = "ring")]
     Ring,
@@ -113,12 +113,18 @@ pub enum DynamicImpl {
 #[cfg(target_arch = "x86_64")]
 cpufeatures::new!(x86_sha_extensions, "sha", "sse2", "ssse3", "sse4.1");
 
+#[cfg(target_arch = "aarch64")]
+cpufeatures::new!(aarch64_sha_extensions, "sha2");
+
 #[inline(always)]
 pub fn have_sha_extensions() -> bool {
     #[cfg(target_arch = "x86_64")]
     return x86_sha_extensions::get();
 
-    #[cfg(not(target_arch = "x86_64"))]
+    #[cfg(target_arch = "aarch64")]
+    return aarch64_sha_extensions::get();
+
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     return false;
 }
 
@@ -126,28 +132,38 @@ impl DynamicImpl {
     /// Choose the best available implementation based on the currently executing CPU.
     #[inline(always)]
     pub fn best() -> Self {
-        // If sha2 feature is enabled (non-x86_64), use sha2
-        #[cfg(all(feature = "sha2", not(target_arch = "x86_64")))]
+        // If sha2 feature is enabled (non-x86_64/aarch64), use sha2
+        #[cfg(all(
+            feature = "sha2",
+            not(any(target_arch = "x86_64", target_arch = "aarch64"))
+        ))]
         {
             Self::Sha2
         }
 
-        // On x86_64 with ring: check for SHA extensions
-        #[cfg(all(feature = "ring", target_arch = "x86_64"))]
+        // On x86_64/aarch64 with ring: check for SHA extensions
+        #[cfg(all(feature = "ring", any(target_arch = "x86_64", target_arch = "aarch64")))]
         if have_sha_extensions() {
             Self::Sha2
         } else {
             Self::Ring
         }
 
-        // On x86_64 without ring: always use sha2
-        #[cfg(all(not(feature = "ring"), target_arch = "x86_64"))]
+        // On x86_64/aarch64 without ring: always use sha2
+        #[cfg(all(
+            not(feature = "ring"),
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        ))]
         {
             Self::Sha2
         }
 
-        // On non-x86_64 with ring but without sha2 feature: use ring
-        #[cfg(all(feature = "ring", not(target_arch = "x86_64"), not(feature = "sha2")))]
+        // On other architectures with ring but without sha2 feature: use ring
+        #[cfg(all(
+            feature = "ring",
+            not(any(target_arch = "x86_64", target_arch = "aarch64")),
+            not(feature = "sha2")
+        ))]
         {
             Self::Ring
         }
@@ -155,12 +171,12 @@ impl DynamicImpl {
         // Compile error if no implementation available
         #[cfg(all(
             not(feature = "ring"),
-            not(target_arch = "x86_64"),
+            not(any(target_arch = "x86_64", target_arch = "aarch64")),
             not(feature = "sha2")
         ))]
         {
             compile_error!(
-                "Either 'ring' or 'sha2' feature must be enabled on non-x86_64 architectures"
+                "Either 'ring' or 'sha2' feature must be enabled on non-x86_64/aarch64 architectures"
             );
         }
     }
@@ -172,7 +188,7 @@ impl Sha256 for DynamicImpl {
     #[inline(always)]
     fn hash(&self, input: &[u8]) -> Vec<u8> {
         match self {
-            #[cfg(any(target_arch = "x86_64", feature = "sha2"))]
+            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
             Self::Sha2 => Sha2CrateImpl.hash(input),
             #[cfg(feature = "ring")]
             Self::Ring => RingImpl.hash(input),
@@ -182,7 +198,7 @@ impl Sha256 for DynamicImpl {
     #[inline(always)]
     fn hash_fixed(&self, input: &[u8]) -> [u8; HASH_LEN] {
         match self {
-            #[cfg(any(target_arch = "x86_64", feature = "sha2"))]
+            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
             Self::Sha2 => Sha2CrateImpl.hash_fixed(input),
             #[cfg(feature = "ring")]
             Self::Ring => RingImpl.hash_fixed(input),
@@ -194,7 +210,7 @@ impl Sha256 for DynamicImpl {
 ///
 /// This enum ends up being 8 bytes larger than the largest inner context.
 pub enum DynamicContext {
-    #[cfg(any(target_arch = "x86_64", feature = "sha2"))]
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
     Sha2(sha2::Sha256),
     #[cfg(feature = "ring")]
     Ring(ring::digest::Context),
@@ -203,7 +219,7 @@ pub enum DynamicContext {
 impl Sha256Context for DynamicContext {
     fn new() -> Self {
         match DynamicImpl::best() {
-            #[cfg(any(target_arch = "x86_64", feature = "sha2"))]
+            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
             DynamicImpl::Sha2 => Self::Sha2(Sha256Context::new()),
             #[cfg(feature = "ring")]
             DynamicImpl::Ring => Self::Ring(Sha256Context::new()),
@@ -212,7 +228,7 @@ impl Sha256Context for DynamicContext {
 
     fn update(&mut self, bytes: &[u8]) {
         match self {
-            #[cfg(any(target_arch = "x86_64", feature = "sha2"))]
+            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
             Self::Sha2(ctxt) => Sha256Context::update(ctxt, bytes),
             #[cfg(feature = "ring")]
             Self::Ring(ctxt) => Sha256Context::update(ctxt, bytes),
@@ -221,7 +237,7 @@ impl Sha256Context for DynamicContext {
 
     fn finalize(self) -> [u8; HASH_LEN] {
         match self {
-            #[cfg(any(target_arch = "x86_64", feature = "sha2"))]
+            #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
             Self::Sha2(ctxt) => Sha256Context::finalize(ctxt),
             #[cfg(feature = "ring")]
             Self::Ring(ctxt) => Sha256Context::finalize(ctxt),

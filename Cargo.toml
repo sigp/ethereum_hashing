@@ -15,7 +15,7 @@ rust-version = "1.83.0"
 ring = { version = "0.17", optional = true }
 sha2 = { version = "0.10", optional = true }
 
-[target.'cfg(target_arch = "x86_64")'.dependencies]
+[target.'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))'.dependencies]
 cpufeatures = "0.2"
 sha2 = "0.10"
 

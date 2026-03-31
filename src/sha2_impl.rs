@@ -1,5 +1,5 @@
 // This implementation is compiled on x86_64 (always has sha2) or when the sha2 feature is enabled.
-#![cfg(any(target_arch = "x86_64", feature = "sha2"))]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
 
 use crate::{Sha256, Sha256Context, HASH_LEN};
 use sha2::Digest;

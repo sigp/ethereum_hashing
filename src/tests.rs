@@ -66,7 +66,7 @@ mod ring_tests {
     }
 }
 
-#[cfg(any(target_arch = "x86_64", feature = "sha2"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", feature = "sha2"))]
 mod sha2_tests {
     use super::*;
     use crate::sha2_impl::Sha2CrateImpl;
